@@ -1,0 +1,3 @@
+[submodule "src/clean-shutdown"]
+	path = src/clean-shutdown
+	url = git@github.com:meshell/clean-shutdown.git
