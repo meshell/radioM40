@@ -1,0 +1,16 @@
+[Unit]
+Description=Analog Volume Control
+Wants=volumio.service
+
+[Service]
+Environment="PATH=/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin"
+ExecStart=/usr/bin/python3 /home/volumio/analog_input/volume_daemon.py
+StandardOutput=syslog
+StandardError=syslog
+Restart=always
+SyslogIdentifier=volume-control
+User=volumio
+Group=volumio
+
+[Install]
+WantedBy=multi-user.target

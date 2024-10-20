@@ -8,6 +8,7 @@ import time
 import logging
 import logging.handlers
 import argparse
+import socketio
 
 from signal import signal, SIGINT, SIGTERM
 from sys import exit
@@ -21,6 +22,8 @@ mcp = MCP3008(0, 1)
 mcp.open()
 
 chan0 = AnalogIn(mcp, 0)
+
+sio = socketio.Client()
 
 last_read = 0       
 tolerance = 256
@@ -62,8 +65,8 @@ def get_shutdown_handler(message=None):
         # If we want to do anything on shutdown, such as stop motors on a robot,
         # you can add it here.
         logger.info(f'Shutdown: Set volume to {DEFAULT_SHUTDOWN_VOL}')
-        set_vol_cmd = f'volumio volume {DEFAULT_SHUTDOWN_VOL}'
-        os.system(set_vol_cmd)
+        sio.emit('volume', DEFAULT_SHUTDOWN_VOL)
+        sio.disconnect()
         mcp.close()
         exit(0)
     return handler
@@ -114,6 +117,11 @@ if __name__ == '__main__':
     # Attach the handler to the logger
     logger.addHandler(handler)
     last_read = 0
+
+    sio.connect('http://localhost:3000')
+    print('my sid is', sio.sid)
+    print('my transport is', sio.transport)
+
     while True:
         trim_pot = chan0.value
         pot_adjust = abs(trim_pot - last_read)
@@ -123,9 +131,7 @@ if __name__ == '__main__':
             logger.debug(f'Volume = {set_volume}%') 
             if (set_volume % vol_step) == 0:
                 logger.info(f'Change volume to  {set_volume}%') 
-                set_vol_cmd = f'volumio volume {set_volume}'
-                import os
-                os.system(set_vol_cmd)
+                sio.emit('volume', set_volume)
             # save the potentiometer reading for the next loop
             last_read = trim_pot
         time.sleep(0.5)

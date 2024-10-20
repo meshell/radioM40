@@ -12,51 +12,89 @@
 
 PATH=/sbin:/usr/sbin:/bin:/usr/bin:/usr/local/bin
 DESC="Analog volume control for volumio"
-DAEMON_NAME=volume-control
+NAME=volume-control
 DAEMON=/home/volumio/analog_input/volume_daemon.py
-PIDFILE=/var/run/$DAEMON_NAME.pid
-LOGFILE=/var/log/$DAEMON_NAME.log
-ERRFILE=/var/log/$DAEMON_NAME.err
-SCRIPTNAME=/etc/init.d/$DAEMON_NAME
+PIDFILE=/var/run/$NAME.pid
+LOGFILE=/var/log/$NAME.log
+ERRFILE=/var/log/$NAME.err
+SCRIPTNAME=/etc/init.d/$NAME
 
 # Add any command line options for your daemon here
 DAEMON_OPTS=""
 
-# This next line determines what user the script runs as.
-# Root generally not recommended but could be required for some libraries.
-DAEMON_USER=root
+# Exit if the package is not installed
+[ -x "$DAEMON" ] || exit 0
 
-# The process ID of the script when it runs is stored here:
-PIDFILE=/var/run/$DAEMON_NAME.pid
+# Load the VERBOSE setting and other rcS variables
+. /lib/init/vars.sh
 
+# Define LSB log_* functions.
+# Depend on lsb-base (>= 3.2-14) to ensure that this file is present
+# and status_of_proc is working.
 . /lib/lsb/init-functions
 
-do_start () {
-    log_daemon_msg "Starting system $DAEMON_NAME daemon"
-    start-stop-daemon --start --background --pidfile $PIDFILE --make-pidfile --user $DAEMON_USER --chuid $DAEMON_USER --startas $DAEMON -- $DAEMON_OPTS
-    log_end_msg $?
+do_start ()
+{
+	if [ -f "$PIDFILE" ] && kill -0 $(cat "$PIDFILE"); then
+		echo 'Service already running' >&2
+		return 1
+	fi
+    echo 'Starting $NAME...' >&2
+    start-stop-daemon --start --background --make-pidfile --pidfile $PIDFILE --startas $DAEMON -- $DAEMON_OPTS
 }
 
-do_stop () {
-    log_daemon_msg "Stopping system $DAEMON_NAME daemon"
-    start-stop-daemon --stop --pidfile $PIDFILE --retry 10
-    log_end_msg $?
+do_stop () 
+{
+    	if [ ! -f "$PIDFILE" ] || ! kill -0 $(cat "$PIDFILE"); then
+		echo 'Service not running' >&2
+		return 1
+	fi
+	echo 'Stopping $NAME...' >&2
+    start-stop-daemon --stop --remove-pidfile --pidfile $PIDFILE --retry 10
 }
 
 case "$1" in
-    start|stop)
-        do_${1}
-        ;;
-    restart|reload|force-reload)
-        do_stop
-        do_start
-        ;;
-    status)
-        status_of_proc "$DAEMON_NAME" "$DAEMON" && exit 0 || exit $?
-        ;;
-    *)
-        echo "Usage: $SCRIPTNAME {start|stop|restart|status}"
-        exit 1
-        ;;
+  start)
+	[ "$VERBOSE" != no ] && log_daemon_msg "Starting $DESC" "$NAME"
+	do_start
+	case "$?" in
+		0|1) [ "$VERBOSE" != no ] && log_end_msg 0 ;;
+		2) [ "$VERBOSE" != no ] && log_end_msg 1 ;;
+	esac
+	;;
+  stop)
+	[ "$VERBOSE" != no ] && log_daemon_msg "Stopping $DESC" "$NAME"
+	do_stop
+	case "$?" in
+		0|1) [ "$VERBOSE" != no ] && log_end_msg 0 ;;
+		2) [ "$VERBOSE" != no ] && log_end_msg 1 ;;
+	esac
+	;;
+  status)
+	status_of_proc "$DAEMON" "$NAME" && exit 0 || exit $?
+	;;
+  restart|force-reload)
+	log_daemon_msg "Restarting $DESC" "$NAME"
+	do_stop
+	case "$?" in
+	  0|1)
+		do_start
+		case "$?" in
+			0) log_end_msg 0 ;;
+			1) log_end_msg 1 ;; # Old process is still running
+			*) log_end_msg 1 ;; # Failed to start
+		esac
+		;;
+	  *)
+		# Failed to stop
+		log_end_msg 1
+		;;
+	esac
+	;;
+  *)
+	echo "Usage: $SCRIPTNAME {start|stop|status|restart|force-reload}" >&2
+	exit 3
+	;;
 esac
-exit 0
+
+:
