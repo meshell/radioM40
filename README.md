@@ -83,7 +83,7 @@ Use systemd to start volume-control as service:
   `sudo systemctl start volume-control`
 
 ### Playlist/Radio Station Control
-For Playlist/Radio Station selection the original '_radio station control knob'_ is used. The  knob turns a [mechanically controlled capacitor](https://en.wikipedia.org/wiki/Variable_capacitor#Mechanically_controlled_capacitance). In order to 'measure' the capacitance the two separate _variable capacitor_ are used to control the frequency of a [ICM7555](doc/ICM7555.pdf) timer in _monostable operation_ and then use an [LM231](doc/lm231.pdf) _Voltage-to-Frequency Converter_ to measure the frequency (_see circuit above_).
+For Playlist/Radio Station selection the original '_radio station control knob'_ is used. The  knob turns a [mechanically controlled capacitor](https://en.wikipedia.org/wiki/Variable_capacitor#Mechanically_controlled_capacitance). In order to 'measure' the capacitance the two separate _variable capacitor_ are used to control the frequency of a [ICM7555](doc/ICM7555.pdf) timer in _monostable operation_ and then use an [LM231](doc/lm231.pdf) _Voltage-to-Frequency Converter_ to measure the frequency (_see circuit above_). As OpAmp a [MC1741CP](doc/MC1741.pdf) is used.
 
 Acording the datasheet, the resulting frequency of the _ICM7555_ can be calculated as: $f = \frac{1.38}{(R_A + 2R_B)C}$
 
